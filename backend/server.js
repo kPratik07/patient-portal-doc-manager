@@ -11,9 +11,15 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/patien
 const NODE_ENV = process.env.NODE_ENV || 'development';
 const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(__dirname, 'uploads');
 
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+const corsOptions = {
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  credentials: true,
+  optionsSuccessStatus: 200,
+};
+
+app.use(cors(corsOptions));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use('/uploads', express.static(UPLOAD_DIR));
 mongoose
   .connect(MONGODB_URI)
@@ -43,7 +49,8 @@ app.use((error, req, res, next) => {
     return res.status(400).json({ error: error.message });
   }
 
-  res.status(500).json({ error: 'Internal server error', details: error.message });
+  const details = NODE_ENV === 'production' ? undefined : error.message;
+  res.status(500).json({ error: 'Internal server error', ...(details && { details }) });
 });
 
 app.use((req, res) => {
