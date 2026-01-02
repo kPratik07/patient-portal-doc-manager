@@ -1,32 +1,45 @@
-import { useState } from 'react';
+import { useState } from "react";
 
-export default function DocumentItem({ document, onDelete, onDownload, onView }) {
+export default function DocumentItem({
+  document,
+  onDelete,
+  onDownload,
+  onView,
+}) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isViewing, setIsViewing] = useState(false);
 
   const formatFileSize = (bytes) => {
-    if (bytes === 0) return '0 Bytes';
+    if (bytes === undefined || bytes === null) return "Unknown size";
+    if (bytes === 0) return "0 Bytes";
+    if (bytes < 0) return "Unknown size";
     const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB'];
-    const i = Math.floor(Math.log(bytes, k));
-    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+    const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    const index = Math.min(i, sizes.length - 1);
+    return (
+      Math.round((bytes / Math.pow(k, index)) * 100) / 100 + " " + sizes[index]
+    );
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
   const handleDelete = async () => {
     setIsDeleting(true);
-    await onDelete(document.id);
-    setIsDeleting(false);
+    try {
+      await onDelete(document.id);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleDownload = async () => {
@@ -34,16 +47,19 @@ export default function DocumentItem({ document, onDelete, onDownload, onView })
     try {
       await onDownload(document.id, document.filename);
     } catch (error) {
-      console.error('Download failed:', error);
+      console.error("Download failed:", error);
     } finally {
       setIsDownloading(false);
     }
   };
 
   const handleView = async () => {
-    setIsViewing(true);
-    await onView(document.id, document.filename);
-    setIsViewing(false);
+    try {
+      setIsViewing(true);
+      await onView(document.id, document.filename);
+    } finally {
+      setIsViewing(false);
+    }
   };
 
   return (
@@ -51,7 +67,10 @@ export default function DocumentItem({ document, onDelete, onDownload, onView })
       <div className="mb-4">
         <div className="flex items-start gap-2 mb-2">
           <span className="text-2xl flex-shrink-0">📄</span>
-          <p className="font-semibold text-gray-800 break-words text-sm" title={document.filename}>
+          <p
+            className="font-semibold text-gray-800 break-words text-sm"
+            title={document.filename}
+          >
             {document.filename}
           </p>
         </div>
@@ -69,24 +88,24 @@ export default function DocumentItem({ document, onDelete, onDownload, onView })
           disabled={isViewing}
           className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-2 px-3 rounded-lg text-xs transition duration-200 flex items-center justify-center gap-1"
         >
-          <span>{isViewing ? '⏳' : '👁️'}</span>
-          {isViewing ? 'Opening' : 'View'}
+          <span>{isViewing ? "⏳" : "👁️"}</span>
+          {isViewing ? "Opening" : "View"}
         </button>
         <button
           onClick={handleDownload}
           disabled={isDownloading}
           className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-semibold py-2 px-3 rounded-lg text-xs transition duration-200 flex items-center justify-center gap-1"
         >
-          <span>{isDownloading ? '⏳' : '⬇️'}</span>
-          {isDownloading ? 'Downloading' : 'Download'}
+          <span>{isDownloading ? "⏳" : "⬇️"}</span>
+          {isDownloading ? "Downloading" : "Download"}
         </button>
         <button
           onClick={handleDelete}
           disabled={isDeleting}
           className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white font-semibold py-2 px-3 rounded-lg text-xs transition duration-200 flex items-center justify-center gap-1"
         >
-          <span>{isDeleting ? '⏳' : '🗑️'}</span>
-          {isDeleting ? 'Deleting' : 'Delete'}
+          <span>{isDeleting ? "⏳" : "🗑️"}</span>
+          {isDeleting ? "Deleting" : "Delete"}
         </button>
       </div>
     </div>
